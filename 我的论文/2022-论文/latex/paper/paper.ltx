@@ -1,0 +1,364 @@
+\documentclass[lettersize,journal]{IEEEtran}
+\usepackage{amsmath,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{array}
+\usepackage[caption=false,font=normalsize,labelfont=sf,textfont=sf]{subfig}
+\usepackage{textcomp}
+\usepackage{stfloats}
+\usepackage{url}
+\usepackage{verbatim}
+\usepackage{graphicx}
+\usepackage{cite}
+\hyphenation{op-tical net-works semi-conduc-tor IEEE-Xplore}
+% updated with editorial comments 8/9/2021
+
+\begin{document}
+
+\title{Deep Neural Network optimized by Multi-Objective Evolutionary Algorithm for Intrusion Detection of Vehicle CAN Communication}
+
+\author{Bin Cao, Tian Shan, IEEE Publication Technology,~\IEEEmembership{Staff,~IEEE,}
+        % <-this % stops a space
+\thanks{This paper was produced by the IEEE Publication Technology Group. They are in Piscataway, NJ.}% <-this % stops a space
+\thanks{Manuscript received April 19, 2021; revised August 16, 2021.}}
+
+% The paper headers
+\markboth{Journal of \LaTeX\ Class Files,~Vol.~14, No.~8, August~2021}%
+{Shell \MakeLowercase{\textit{et al.}}: A Sample Article Using IEEEtran.cls for IEEE Journals}
+
+\IEEEpubid{0000--0000/00\$00.00~\copyright~2021 IEEE}
+% Remember, if you use this you must call \IEEEpubidadjcol in the second
+% column for its text to clear the IEEEpubid mark.
+
+\maketitle
+
+\begin{abstract}
+With the popularization of vehicle electrification and networking, more and more electronic devices have emerged in the vehicle. It is very necessary to ensure the safety and reliability of the communication between the various modules in the vehicle.  Especially as the most commonly used communication protocol on vehicles, Controller Area Network (CAN) communication. Neural architecture search (NAS) is a promising method for automatically design neural architectures. NAS adopts a search strategy to explore the predeﬁned search space to ﬁnd outstanding performance architecture with the minimum searching costs. In this paper we propose an intrusion detection system (IDS) based deep neural network which is optimized by Multi-Objective Evolutionary Algorithm to promote accuracy and decrease complicity of the neural network. Through graph neural network and convolutional neural network to explore the internal logical feature and spatial feature of CAN message. Because the different CAN length of the different functions of the vehicle CAN message, we take advantage of reinforcement learning to dynamic get a CAN package which as a sample sent to our model. we also propose a method to converting original CAN message to graph data by use of its time sequence feature. We performed an experimental study using the datasets provided and collected while "Car Hacking: Attack \& Defense Challenge" to evaluate our detection system. The experimental results demonstrate that the proposed IDS has significantly low false negative rates and error rates when compared to other deep-learning algorithms.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Keywords: Intrusion Detection of Controller Area Network (CAN), Multi-Objective Evolutionary Algorithm (MOEA), graph neural network (GNN), convolutional neural network (CNN).
+\end{IEEEkeywords}
+
+\section{Introduction}
+\IEEEPARstart{I}{n} the last few decades, the implementation of automotive electronics has experienced a rapid growth \cite{1}. This trend has resulted in several changes in the vehicular ecosystem. Drive-by wire (DBW) technology, for example, uses of electronic or electrical systems in the control systems, such as the throttle, brake, and steering, which were traditionally controlled using mechanical linkages. CAN provides a simple and reliable communication protocol as the standard of an in-vehicle network \cite{2}, connecting not only sensors and controllers but also the Internet. The adoption of CAN accelerates the applications with the emergence of Vehicle-to-Vehicle (V2V) and Vehicle-to-Infrastructure (V2I) communication interfaces \cite{3}. However, the openness of the vehicular system increases the risk of malicious cyberattacks that can severely threat human life. 
+
+However, the conventional in-vehicle networks are tremendously vulnerable with the cyberattacks as CAN is developed for an isolated physical system before. For example, every ECU sharing a CAN bus can obtain any ECU-to-ECU message. Furthermore, a CAN packet has no sender’s identification as shown in Fig. 1. Recent research works point the weakness of the security. 
+
+Koscher et al. \cite{4} conduct several experiments where a CAN message can be readily fuzzed by a packet injection and modification. Various attack scenarios e.g. disabling brakes and displaying wrong information on an instrument panel are shown in \cite{5,6}. Attacks on the CAN bus can manifest in several ways. Diagnostic commands deployed during driving can cause malicious effects, e.g. locking the brakes to immobilize the car. However diagnostic commands should never be seen during normal driving, and so they are detectable trivially.
+
+To address the aforementioned challenges, In this paper, we propose an IDS using a deep neural network (DNN) to secure the CAN bus from cyber-attacks, such as denial-of-service (DoS) and spooﬁng attacks, with significantly high accuracy and low complicity. In summary, the main contributions of this paper are as follows:
+
+\begin{enumerate}
+\item{First, multi-objective evolutionary algorithm is proposed to optimize the structure and super parameters of CNN and GNN in CAN message intrusion detection.}
+\item{Second, a method of converting CAN into graph data is proposed to convert CANID from time domain to space domain, so as to extract the logical sequence characteristics of CANID using graph neural network.}
+\item{Third, propose reinforcement learning neural network to dynamically obtain the length of CAN message detected each time to adapt to the dynamics and uncertainty of the CAN. The graph neural network and convolution network are used to extract the logical and spatial features of the can message at the same time, and the model is verified by the public CAN dataset. A large number of experiments show that the proposed detection model has better detection performance compared with other deep learning algorithms.}
+\end{enumerate}
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=2.5in]{CAN}
+\caption{Format of the CAN data frame.}
+\label{fig_1}
+\end{figure}
+
+\newpage
+
+\section{RELATED WORK}
+\subsection{Conventional intrusion detection of CAN}
+The CAN frame is generally unable to support Message  Authentication Code (MAC) \cite{7} and other methods of securing communication. Some researchers have attempted to either create new protocols or spread MAC across multiple transmissions. in \cite{8}, Tashiro et al. for tampering detection can be conducted for both individual frames and entire sections, they propose a protocol that provides protection against replay, masquerading and injection attacks by sending a partial MAC in each frame. Nowdehi et al. \cite{9} examine many of these altered protocols in light of five criteria for potential CAN message authentication solutions from an industry perspective. They found that no solutions met all the criteria. VatiCAN takes the approach of utilizing maintenance support, “sufficient implementation details” and no excessive overhead, while WooAuth alters the extended CAN protocol to allow more space for authentication codes. Finally, the authors suggest that the CAN bus might “be fundamentally unsuited for secure communication” \cite{9}
+
+\subsection{Deep learning intrusion detection of CAN}
+Intrusion detection system (IDS) can combine machine learning to train itself to identify abnormal behavior, which can be used as an alternative or supplement to Mac. IDS can prevent spoofing, injection, bus shutdown and denial of service attacks. In \cite{10}, Choi et al. Introduced a method called voltage IDS, which uses the inconsistency of ECU signals, first conducts training and testing, identifies the signal characteristics at this stage, and then uses the training data to verify whether the ECU has been damaged. Voltage IDS can detect camouflage attacks by using multi-class classifiers, one of which corresponds to an ECU. It predicts the most likely sender and compares this information with the actual can ID of the message. If they are different, a camouflage attack is detected. In \cite{11}, song et al, by converting the ID part of the CAN frame into binary. Used the changed ResNet model to extract the features of the binary text, and learned the features of the intrusion message and the normal message for intrusion detection. Their experimental results show that compared with the traditional machine learning algorithm, this algorithm has lower false positive rate and false positive rate. In \cite{12}, Taylor et al. Proposed using deep learning methods for intrusion detection, because they are generated directly from the bit stream on the network, the execution efficiency of these functions is high and the complexity is low. This technology monitors the exchange packets in the vehicle network while training the characteristics offline, and provides a real-time response to the attack with a significantly high detection rate in their experiment.
+
+\subsection{neural architecture search by EA}
+neural architecture search (NAS) aims to automatically design network architecture, which is essentially an optimization problem of ﬁnding an architecture with the best performance in speciﬁc search space with constrained resources \cite{13, 14}. Sun et al. \cite{15} used EA with variable coding length to automatically evolve the architecture of CNN. William et al. \cite{16} introduced an evolutionary NAS coding strategy based on directed acyclic graphs (DAG), which has better performance than the randomly generated CNN architecture. Real et al. propose Amoebanet \cite{17}, which uses improved tournament selection to evolve network groups, and achieves better results on Imagenet than the handmade model. Wang et al. \cite{18} designed an effective evolutionary algorithm to optimize the generator within the framework of GANs. This method can effectively improve the generation performance and training stability of GAN model. Sun et al. \cite{15} proposed a variable length coding, which can represent different numbers of building blocks and layers to search for the best depth convolutional neural network. Yin \cite{19} uses evolutionary multi-objective method to design CNN architecture, which uses probabilistic SMBO to maximize classification performance and minimize network reasoning time. Elsken et al. \cite{20} described NAS as a bi-objective optimization problem, in which two objectives are to maximize performance and minimize computing resources. Lu et al. \cite{21} proposed nsganet, which can automatically design the network, maximize the model performance and minimize floating point operations (flops). 
+
+\subsection{Surrogate}
+A major disadvantage of EvoNAS is that in the process of evolutionary optimization, each new candidate neural network needs to be trained on the training data set and then evaluated on the validation data set to avoid over-fitting. Therefore, if the network is large and the training dataset is large, the architecture evaluation in EvoNAS may take several hours. Because EAS is a kind of group based search methods, they usually need a lot of fitness evaluation, which makes EvoNAS computationally difficult to implement. For example, on CIFAR10 and CIFAR100 datasets, CNN-GA \cite{22} consumes 35 GPU days and 40 GPU days respectively, genetic CNN method \cite{23} consumes 17 GPU days, and large-scale evolutionary algorithm \cite{24} consumes 2750 GPU days. Therefore, in the case of limited computing resources, the agent model can accelerate the fitness evaluation in EvoNAS.
+Agents are divided into high-level agents and low-level agents. The high-level agent and low-level agent represent the architecture level and the parameter level in the architecture respectively. High level agent representation predicts the accuracy of different neural networks by parameterizing the neural network architecture. However, the low-level agent solves the complexity of using SGD optimization from scratch for each architecture after searching multiple architectures. The low-level agent is given a trained hypernetwork and neural network structure including all sub architectures. The weight of the neural network architecture inherits the weight from the hypernetwork. In the search process, the accuracy of using the weight inherited from the hypernetwork becomes the standard for selecting the architecture. However, the correlation between the accuracy of prediction architecture and the final accuracy of neural architecture through weight sharing is not close. The neural architecture reference MSuNAS \cite{25} we searched is not only sharing the weight of hypernetwork, but also fine-tuning through training again.
+MetaQNN \cite{26} uses the agent model to predict the final accuracy of candidate architectures (as time series prediction) from the first 25\% learning curve of SGD training. PNAs \cite{27} uses an alternative model to predict the accuracy of the structure, adding an additional branch to the unit structure, which is repeatedly stacked together. Both methods use the agent method to evaluate the performance of neural architecture. However, the correlation between the prediction accuracy of this method and the actual accuracy of the model is relatively low. OnceForAll \cite{28} also uses an agent model to predict the accuracy of architecture coding. However, the agent model is trained offline for the whole search space, so it needs a large number of samples to learn. ChamNet \cite{29} trains many architectures through complete low-level optimization, and selects only 300 high-precision samples with different efficiency (trigger, delay, energy) to train alternative models offline. Our model only conducts online learning on samples close to Pareto frontier, which significantly improves the efficiency of architecture search. Our model evaluation method draws lessons from the idea of MSuNAS.
+
+\section{PROPOSED METHOD}
+The architecture we proposed is shown in the figure and can be divided into two parts of requiring CAN part and intrusion detection part. Requiring CAN part is constructed by reinforcement learning (RL) network to dynamically collect CAN message. Intrusion detection part is constructed by graph neural network (GNN) and convolutional neural network (CNN). The network architecture of GNN and CNN is optimized by EA. The parts optimized by EA are marked with dotted lines in the figure2. They are the convolution layer of CNN, the GCN layer of graph neural network and the full connection layer and etc. The specific search space and search process are described below. At the same time, using the advantages of two different neural networks, GNN has the advantage of extracting logical features and CNN has the advantage of extracting spatial features. Finally, the output results of the two networks are integrated to obtain the final result.
+
+\begin{figure*}[!t]
+\centering
+{\includegraphics[width=5in]{evo-frame}%
+\label{Overall framework of network architecture.}}
+\hfil
+\caption{Overall framework of network architecture.}
+\label{fig_sim}
+\end{figure*}
+
+\subsection{Reinforcement Learning (RL)}
+RL network is able to dynamic collect CANs of every detect sample which will send to GNN and CNN. Before each intrusion detection, a certain length of CAN message data is dynamically collected as a sample input to the detection network. In the vehicle can message, the message data of different functions or the message of the same function may also need different frames to complete, so the RL network is used to solve the problem of dynamic acquisition. Before training RL network, a GNN with intrusion detection ability is trained first. When training the GNN, the length of input is generated randomly. There are two convolution layers in our GNN. The output of the convolution layer is converted into one-dimensional vectors, and the two one-dimensional vectors are combined as the state input of RL network. The reward function is designed by using the recognition results of GNN. If the graph network recognition is correct, it will get a positive reward, and if the recognition is wrong, it will get a negative penalty. The RL network architecture design of this work refers to TD3\cite{30}. To avoid overestimation of value network, RL network is composed of two value networks and two action networks, and the output is discrete. The dimension of reinforcement learning network output is the difference between the maximum CAN length and the minimum CAN length of intrusion detection. As shown in \eqref{deqn_ex_1}.
+
+\begin{equation}
+\label{deqn_ex_1}
+%x = \sum_{i=0}^{n} 2{i} Q.
+{output\_dim}_{RL}\ =\ MAX(CAN\_LEN)\ -\ MIN(CAN\_LEN)
+\end{equation}
+
+\subsection{Graph Neural Network (GNN)}
+Our work is based on a publicly available datasets which is ATTACK \& DEFENSE CHALLENGE 2020 DATASET \cite{31} which is issues on IEEE-DATAPORT. the dataset contains two states of vehicle driving and stationary, and each part has two types of dataset files: intrusion and normal. In the intrusion file, several intrusion CAN messages are interspersed with normal messages. Directly convert these labeled messages into a format that can be input to the network for training and testing. Our task is to quickly and accurately identify the intrusion CAN messages from the dataset. Each data file has millions of CAN data frames, which can better extract various features in the message.
+First, we set the previous frame of message to point to the next frame of message. Because the message ID is limited, not all messages will point to a new message, it may point to a message frame that has appeared before. The direction relationship of the converted graph data is related to the time sequence of the message frame sequence. A sequence of CAN IDs always indicates different functions in the vehicle, and whether the logic of the execution sequence of the functions is reasonable or not can be learned by the GNN. For example, a large acceleration signal appears when braking, or a vehicle ignition signal appears without a car key signal. These are unreasonable logic. It is very likely that an intrusion message has appeared on the CAN bus, which has practical significance. For the GNN to learn more abstract features, we input a partial graph of sequence data to determine whether the message is an intrusion message, instead of inputting one or two frames of messages. Our proposed approach is shown in Figure. 3.
+
+\begin{figure}[!t]
+%\centering
+\includegraphics[width=3.5in]{graph-data}
+\caption{Construct graph data from original CAN.}
+\label{fig_1}
+\end{figure}
+
+The graph neural network in this work is a graph level classification task, and the network architecture of graph classification task refers to \cite{32}. It is to divide the constructed graph data into several clusters by clustering method. Each cluster can be regarded as a subgraph of graph data to obtain the eigen matrix of a series of subgraphs. Using eigenvectors to construct the pooling matrix, each subgraph is pooled into a super node.  Graph G connected by given K subgraphs, C is part of figure G. $N_k$ represents the number of nodes in the subgraph $G^{(k)}$. $\Gamma^{\left(k\right)}$ is the list of nodes in the subgraph $G^{(k)}$. Each subgraph can be regarded as a super node of graph G. Define sampling operator $C^{\left(k\right)}\in\mathbb{R}^{N\times N_k}$ as follow:
+
+\begin{equation}
+\label{deqn_ex_2}
+C^{\left(k\right)}\left[i,j\right]=1\ if\ and\ only\ if\ \Gamma^{\left(k\right)}\left(j\right)=\upsilon_i
+\end{equation}
+
+$C^{\left(k\right)}\left[i,j\right]$ represents the element in i-th row and j-th column of $C^{\left(k\right)}$, $\Gamma^{\left(k\right)}\left(j\right)$ represents the jth node in the node list $\Gamma^{\left(k\right)}\left(j\right)$. This operation indicates the correspondence between the node in the subgraph $G^{(k)}$ and the original graph G. Because Fourier transform can convert the graph signal to the frequency domain and take the signal information and the structure information of graph data into account, we refer to [graph collapse] and use Fourier transform to design pooling operation. The pooling operation pools the constructed graph signal G into $G_{coar}$. Pooling operation is based on the Fourier transform of each subgraph ${{G^k}}_{k=1}^K$. The Laplace matrix of the subgraph $G^{(k)}$ is $L^{(k)}$. $u_1^{(k)}, …, {\ u}_{N_k}^{(k)}$ represents the all eigenvectors of the Laplacian matrix $L^{(k)}$ of the k-th subgraph. Then use the upsampling operation $C^{(k)}$ to upsample the eigenvector to the whole graph G. The upsampling equation is represented by \eqref{deqn_ex_3}.
+
+\begin{equation}
+\label{deqn_ex_3}
+{\bar{u}}_l^{(k)}=\mathbf{C}^{(k)}\mathbf{u}_l^{(k)},l=1\ldots N_k
+\end{equation}
+
+$\Theta_l\ \in\ \mathbb{R}^{N\times K}$ represents the pooling matrix containing the L-th eigenvector of all subgraphs.
+
+\begin{equation}
+\label{deqn_ex_4}
+\mathrm{\Theta}_l=\left[{\bar{u}}_l^{\left(1\right)},\ldots,{\bar{u}}_l^{\left(k\right)}\right]
+\end{equation}
+
+Each subgraph does not necessarily have the same number of nodes, that is, the number of eigenvectors of each subgraph is not necessarily equal. $N_{max}\ =\ \underset{k\ =\ 1,...,K}\max{N_k}$ represents the maximum number of nodes in all subgraphs. For the subgraph $G^{(k)}$ owns $N_k$ nodes, the lst pooling operation is expressed as:
+
+\begin{equation}
+\label{deqn_ex_5}
+X_l\ =\ \mathrm{\Theta}_l^TX
+\end{equation}
+
+$X_l$ indicates the result of the L-th pooling operation. The k-th row of $X_l$ contains the information of the k-th subgraph, that is, the k-th super node. Based on the above structure, we can construct $N_{max}$ times of pooling operation, and combine the results of all pooling operations to form the coarsen matrix.
+
+\begin{equation}
+\label{deqn_ex_6}
+X_{coar}\ =\ [X_0,...,X_l,\ ..X_{N_{max}}]
+\end{equation}
+
+In some other graph classification tasks using pooling method, the sum or average method is used to treat each node in the subgraph indiscriminately, and the structure information of nodes in each subgraph cannot be extracted. In our work, we pool the graph data once, and do a graph convolution operation to extract features before and after pooling. Finally, the outputs of the two graph convolutions are transformed into one-dimensional vectors by summation or averaging, and the two one-dimensional vectors are spliced into one input to the full connection layer for classification. 
+
+\subsection{optimize GNN by EA}
+How to find accurate recognition and need less computation is what our EA wants to achieve. The chromosome is divided into nine parts. The first part of chromosome is position 0. There is a gene indicating whether to use the direction information of graph data constructed by CAN IDs. The graph data can determine the direction of the edge of the directed graph according to the sequential relationship between two adjacent frames. Specifically, the CAN IDs of the previous frame points to the next frame. Although using the direction of constructing graph data will make more use of the information of graph data, the experimental results show that using more graph information does not necessarily improve the recognition accuracy. See the next section for the analysis of specific experimental results. According to the formula in the previous section, it is necessary to obtain the Laplace matrix of each subgraph and calculate the eigenvector of each subgraph. Whether to use regularization for Laplacian matrix before calculating the eigenvector of each subgraph. The regularized Laplacian matrix $L_{norm}$ and the nonregularized Laplacian matrix L of the graph network are expressed as \eqref{deqn_ex_7}\eqref{deqn_ex_8}. 
+
+\begin{equation}
+\label{deqn_ex_7}
+L\ =\ D\ -\ A
+\end{equation}
+
+\begin{equation}
+\label{deqn_ex_8}
+L_{norm}\ =\ I\ -\ D^{-1/2}AD^{1/2}
+\end{equation}
+
+Where A represents the adjacency matrix of graph data and D represents the degree matrix of graph data.
+
+The third part of the chromosome, positions 2 to 3, is the depth of the two GCN blocks. One GCN block is laid before graph coarsen, and the one is laid after graph coarsen. The fourth part of chromosome, positions 4 to 5, is the number of neurons in each layer of the prediction layer, and the design reference \cite{33}. The appropriate number of layers of graph convolution and the number of neurons in the prediction layer can achieve good detection accuracy while the complexity is not high. Parts 5 to 7 of chromosome, positions 6 to 8, represent the super parameters in the network structure, such as dropout rate, learning rate, etc. Chromosome Part 8, positions 9 to 10, respectively represent how to reduce the dimension into a one-dimensional vector after each convolution block outputs the convolution result. There are three options: sum, average and maximum for each dimension. Part 9 of chromosome represents the activation function after the end of convolution or fully connection layers. The specific genes and corresponding relationships are shown in Table 1.
+ed. There are still some deficiencies in this work. Although it can achieve very good recognition accuracy, compared with previous work, the complexity of our network is higher. Our future work can further apply evolutionary algorithm to simplify the structure of the network more carefully.
+
+\begin{table*}[!t]
+\caption{GNN search space\label{tab:table1}}
+\centering
+\begin{tabular}{cccc}
+\hline
+Part & Position & meaning	 & Search space\\
+\hline
+1 & 0 & directed/undirected graph & directed undirected\\
+2 & 1 & Whether Normalization of subgraph & not normalization normalization\\
+3 & 2-3 & Layers of GCN & one two three\\
+4 & 4-5 & Proportion of neurons in prediction layer & 0.25 0.75 1.00\\
+5 & 6	 & Dropout & 0.05 0.1 0.2 0.3 0.4 0.5\\
+6 & 7 & Weight Decay Rate & 5e-4 8e-4 1e-3 4e-3\\
+7 & 8	 & Learning Rate & 5e-4 1e-3 5e-3 1e-2\\
+8 & 9-10 & way to merge the vectors of every GCN layer & sum average max\\
+9 & 11-18 & Activation function & sigmoid tanh relu  leaky\_relu relu6\\
+\hline
+\end{tabular}
+\end{table*}
+
+\subsection{convolutional neural network (CNN)}
+
+In this paper, the hexadecimal CAN IDS is transformed into binary to form a sample similar to the image. Each pixel is 0 or 1 respectively. According to the reference paper, the number of ID bits of vehicle CAN extended frame is 29 bits, and 29 frames are collected × 29 samples. Deep convolution networks, such as variants of inception and ResNet, are designed and constructed by stacking multiple blocks. The network structure design includes the determination of depth (number of layers), width (number of channels) and spatial resolution change (number of pool layers), while the block structure design stipulates layered connection and local calculation. Through this block design method, the generated model can not only achieve high performance, but also be extended to different datasets or tasks. Therefore, we follow the same block level design method as in \cite{34,35,36}. Block is a small convolution network. To deal with different intermediate information more effectively in forward propagation, four kinds of convolution blocks, shown in Figure 3, are designed according to the different grid sizes of feature mapping. At the same time, the reduction block is designed to increase the deep receptive field, and halve the grid size of the feature map by applying all operations in steps of 2. According to the Convention of modern CNN Architecture \cite{37,38,39}, when the grid size of the feature graph is halved, we double the number of channels (filters) of the block to maintain a roughly constant hidden state dimension.
+
+An operation space is defined by a set of possible basic components of network architecture and known successful modules designed by human experts. The five operations used in this study and the corresponding genotype-phenotype mapping are shown in Table 2. In the table, spatial separable convolution (SP) and deepwise separable convolution (DW) can reduce network parameters without sacrificing network performance. Here, we use two DW operations and two SP operations, and the kernel size respectively is 3 × 3 and 5 × 5, referred to as SP3, DW3 and SP5, DW5.
+
+\begin{table}[!t]
+\caption{CNN search space\label{tab:table2}}
+\centering
+\begin{tabular}{cccc}
+\hline
+Operation type & Kernel size & Short name & Code\\
+\hline
+Spatial Separable Convolutions	 & 3 & SP3 & 0\\
+Spatial Separable Convolutions	 & 5 & SP5 & 1\\
+Depthwise separable convolution & 3 & DW3 & 2\\
+Depthwise separable convolution & 5 & DW5 & 3\\
+Normal convolution & 3 & 3*3 & 4\\
+\hline
+\end{tabular}
+\end{table}
+
+We define that the crossover operation of genetic algorithm is to randomly select a point on two parental chromosomes to disconnect and exchange chromosome genes with each other. The mutation operation of genetic algorithm is to randomly select two genes on a chromosome for exchange. Because the individual is retrained every time, the amount of calculation required is very huge. To improve the evaluation efficiency of genetic algorithm, agent method is used to exchange the weight parameters of corresponding neural network positions in the process of crossover operation and mutation operation. It can be seen from the schematic diagram of four different convolution blocks that the number of gene channels in each convolution block is different, and the number of gene channels in each convolution block is the same, which has no impact on the crossover operation, but will affect the mutation operation. At two gene exchange positions on a chromosome, and the corresponding weights of the neural network need to be exchanged, so the number of channels of the two genes needs to be the same. Both RedA and ResB convolution blocks have only one gene, and ResA and RedB convolution blocks have three genes respectively. Therefore, mutation can only be performed in ResA block or RedB block.
+
+\begin{figure*}[!t]
+\centering
+\includegraphics[width=5in]{ResNet}
+\caption{Res-Inception blocks of CNN.}
+\label{fig_sim}
+\end{figure*}
+
+Inception ResNet is a kind of deep convolution model. It is designed to divide images into 1000 categories in the field of image classification, and shows very excellent performance. The overall architecture of the CNN is shown in Figure 5. The input size is $29\times29\times1$, and the input data size is converted to $13\times13\times28$ through the stem module. After the four modules optimized by EA, the data size is $2\times2\times896$. Finally, the data is transformed into a binary classification vector with dimension 2 through the softmax module. The whole convolution network architecture is shown in Figure 5.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3in]{cnn-overall}
+\caption{Res-Inception blocks of CNN.}
+\label{fig_5}
+\end{figure}
+
+
+\section{Experiment and Result}
+\subsection{experiment setup and result}
+Use common dataset, Car\_Hacking\_Challenge\_Dataset\_rev\newline20Mar2021, tests our proposed algorithm framework and compares it with some other deep learning methods. The dataset is divided into dynamic and static parts. We use the dynamic message part of the vehicle in the dataset, 80\% of the data is used for training and 20\% of the data is used for testing. Our network framework consists of GNN block and CNN block, so we need to convert the data into graph data and binary data according to the above method for adapting to our proposed architecture. Before the two network blocks, there is a reinforcement learning network, which is responsible for dynamically collecting the samples of the input detection system.
+The CNN part trains 26 primary generations in advance, each individual trains 200 epochs, and takes the best accuracy as the adaptability index. Then, after 30 generations of crossover and mutation, the best 26 individuals are selected as the parents of the next generation, and so on. 30 generations of precision images are obtained as shown in figure4, and each generation is marked with different colors. It can be seen from the figure that with the evolution process, there are fewer and fewer individuals with low precision, and individuals with higher precision have evolved. After evolution the accuracy of every individual reached over 85\%. As shown in Table3, although the accuracy of the end of evolution is almost the same as that of the early generation, in the last generation of evolution, the recognition accuracy of excellent individuals selected after training is 5\% higher than that of the first generation.
+In the GNN part, first convert the data into graph data, and obtain the prediction results through graph coarsen, GCN, prediction layer, etc. The number of convolution layers and prediction layers of the graph network. The neurons of each prediction layer are optimized by EA. At the beginning, 100 primary generations were randomly generated, and 7 individuals at the Pareto front were selected from the primary generation as the parents of the next generation, evolving for 30 generations. The complexity of 30 generations, flops, is x-axis, accuracy error, acc\_ error is the image of the y-axis. Red dots are used to mark the dots of the last three generations of individuals. Flops refers to the number of matrix operations in the process of network recognition. Divide by the number of matrix operations of hypernetwork, for converting the flops index into a range of 0 to 1. Acc\_ error refers to 1-acc, so the smaller the acc\_error, the higher the accuracy. It can be seen from the figure that the last individual evolved to the position in the lower left corner of the figure, representing higher accuracy and lower complexity.
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3in]{cnn_evo}
+\caption{CNN evolution result.}
+\label{fig_6}
+\end{figure}
+
+\begin{table}[!t]
+\caption{CNN search space\label{tab:table3}}
+\centering
+\begin{tabular}{cccc}
+\hline
+Stage & Gene code & accuracy	 & Complexity\\
+\hline
+First Gen &  2,4,2,0,3,4,0,3 &  85.13\% &  2874.5M\\
+After evolution without training & 4,4,4,2,3,0,2,3 & 85.15\% & 2628.7M\\
+After evolution with training & 4,4,4,2,3,0,2,3 & 90.20\% & 2628.7M\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[!t]
+\centering
+\includegraphics[width=3in]{gnn_evo}
+\caption{GNN revolution result.}
+\label{fig_7}
+\end{figure}
+
+\subsection{compare with other deep learning method}
+This experiment compares the experimental results of our method with LSTM, DNN, CNN and GNN. 
+\cite{12} uses LSTM and Fully Connected Neural Network to extract the timing features of the data part of CAN. However, each CANID needs to train a complete neural network separately, so it is cumbersome. The loss function of the network is defined as the CrossEntropy loss of each bit corresponding to two adjacent frames of CAN message. In the network verification stage, the maximum loss value of all bits is used as the basis for whether it is an intrusion message. Public dataset, Car\_Hacking\_Challenge\_Dataset\_rev20Mar2021, is used to training and verifying the neural network. Use the normal message part to train the LSTM network, and use the data mixed with abnormal messages to test the network. We find that good results can be obtained after a small number of epochs. It is mentioned in the paper that some bits with low change frequency can be ignored by analyzing the data segment of CAN ID.
+\cite{40} also uses the 64 bits data segment of CAN message to directly input the bit stream to DNN network. The advantage of this network is that it is more efficient and can be directly input to the network without data processing. The specific structure of the network is not pointed out in the paper. We adopt five layers of fully connection. The first layer has 64 neurons to receive 64 bits CAN message bitstream, the second layer has 128 neurons, the third layer has 512 neurons, the fourth layer has 256 neurons, the fifth layer has 32 neurons, and the sixth layer outputs the second classification. Through the verification of public data sets, the accuracy is low, but the neural network is simple and does not need special construction data.1
+\cite{11} are the same with our network convolution part. I directly use our network framework. Using gene “44440444” can directly construct the same architecture as in the paper.  The data set in is the data collected by the author himself. The classification accuracy of the public data set does not reach the accuracy of the author's own experiment, which is lower than that of the convolution network we evolved by MOEA. Our algorithm combines the two advantages of the spatial feature extraction of CNN and the logical feature of GNN, compares the difference of two-dimensional variables output by the two networks when outputting the results, and takes the network result with large difference as the final result, which is the result of taking a network that is more confident in the intrusion detection. Using this method, the two forms of networks can complement each other. As shown in the table, it is the comparison result of these network architectures. It can be seen that our network can achieve higher recognition accuracy, which is very important for network security. GNN module is also a part of the neural network architecture proposed by us. From the results, it can be seen that the accuracy of a single GNN network is lower than that of the combination of two networks.
+
+\begin{table}[!t]
+\caption{CNN search space\label{tab:table3}}
+\centering
+\begin{tabular}{cccc}
+\hline
+Deep learning method & accuracy & complexity\\
+\hline
+LSTM & 97.02\% & 0.057M\\
+DNN & 95.36\% & 6.8M\\
+CNN & 85.06\% & 2628.7M\\
+GNN & 96.43\% & 54.3M\\
+our method without RL & 95.17\% & 2673.1M\\
+our method with RL & 99.87\% & 2673.1M\\
+\hline
+\end{tabular}
+\end{table}
+
+
+\section{Conclusion}
+We use multiple network composition to ensure the accuracy of intrusion detection and minimize the complexity of the network. As far as we know, graph network is used for can intrusion detection for the first time in this work, and only graph network detection results can reach more than 95\%. At the same time, we combine the dual advantages of graph network and convolution network. Through the output results of the two networks, the detection results of the two networks are complementary. At the same time, the logical and spatial characteristics of can data are us
+
+%\section*{Acknowledgments}
+%This should be a simple paragraph before the References to thank those individuals and institutions who have supported your work on this article.
+
+
+
+%{\appendix[Proof of the Zonklar Equations]
+%Use $\backslash${\tt{appendix}} if you have a single appendix:
+%Do not use $\backslash${\tt{section}} anymore after $\backslash${\tt{appendix}}, only $\backslash${\tt{section*}}.
+%If you have multiple appendixes use $\backslash${\tt{appendices}} then use $\backslash${\tt{section}} to start each appendix.
+%You must declare a $\backslash${\tt{section}} before using any $\backslash${\tt{subsection}} or using $\backslash${\tt{label}} ($\backslash${\tt{appendices}} by itself
+% starts a section numbered zero.)}
+
+
+
+%{\appendices
+%\section*{Proof of the First Zonklar Equation}
+%Appendix one text goes here.
+% You can choose not to have a title for an appendix if you want by leaving the argument blank
+%\section*{Proof of the Second Zonklar Equation}
+%Appendix two text goes here.}
+
+
+
+%\section{References Section}
+%You can use a bibliography generated by BibTeX as a .bbl file.
+% BibTeX documentation can be easily obtained at:
+% http://mirror.ctan.org/biblio/bibtex/contrib/doc/
+% The IEEEtran BibTeX style support page is:
+% http://www.michaelshell.org/tex/ieeetran/bibtex/
+ 
+ % argument is your BibTeX string definitions and bibliography database(s)
+%\bibliography{IEEEabrv,../bib/paper}
+%
+%\section{Simple References}
+%You can manually copy in the resultant .bbl file and set second argument of $\backslash${\tt{begin}} to the number of references
+% (used to reserve space for the reference number labels box).
+
+\bibliography{paper}
+\bibliographystyle{IEEEtran}
+
+
+%\newpage
+%
+%\section{Biography Section}
+%If you have an EPS/PDF photo (graphicx package needed), extra braces are
+% needed around the contents of the optional argument to biography to prevent
+% the LaTeX parser from getting confused when it sees the complicated
+% $\backslash${\tt{includegraphics}} command within an optional argument. (You can create
+% your own custom macro containing the $\backslash${\tt{includegraphics}} command to make things
+% simpler here.)
+% 
+%\vspace{11pt}
+%
+%%\bf{If you include a photo:}\vspace{-33pt}
+%%\begin{IEEEbiography}[{\includegraphics[width=1in,height=1.25in,clip,keepaspectratio]{fig1}}]{Michael Shell}
+%%Use $\backslash${\tt{begin\{IEEEbiography\}}} and then for the 1st argument use $\backslash${\tt{includegraphics}} to declare and link the author photo.
+%%Use the author name as the 3rd argument followed by the biography text.
+%%\end{IEEEbiography}
+%
+%\vspace{11pt}
+%
+%\bf{If you will not include a photo:}\vspace{-33pt}
+%\begin{IEEEbiographynophoto}{John Doe}
+%Use $\backslash${\tt{begin\{IEEEbiographynophoto\}}} and the author name as the argument followed by the biography text.
+%\end{IEEEbiographynophoto}
+%
+%
+%
+%
+%\vfill
+
+\end{document}

@@ -1,9 +1,0 @@
-1. 尽管我们使用多目标优化算法优化出了图网络结构，但是由于提出的模型同时结合了强化学习网络，计算复杂度最高的卷积网络卷积网络，图网络，所以提出的模型相对于之前的工作计算复杂度更高。但最终带来了最高的识别准确率。
-1. Although we use MOEA to optimize GNN of our model, the computational complexity of the proposed model combining RL, CNN and GNN, is higher than that of the previous work. The CNN have the highest computational complexity among the three neural networks. Finally our model indeed obtain the best accuracy of intrusion detection of CAN.
-2. 我们模型的卷积网络识别需要原始报文数据转换成二进制图像数据，图网络识别需要将原始报文数据转换为图数据，所以和直接输入CAN报文数据流的LSTM网络相比，我们需要付出额外的的数据预处理。
-converting the original CAN message into binary image and graph data is needed for intrusion detection of CNN and GNN. Therefore, compared with the LSTM network that directly inputs the can message data stream, we need to pay extra data preprocessing.
-3. 在把原始CAN报文分别输入到卷积网络和图网络，我们还需要保证两个网络对同一个数据包的处理，卷积网络每次输入是29帧数据，输入图网络的数据帧数大多数情况不是29的倍数，这种情况我们送入卷积网络的数据包帧数小于送入到图网络的帧数，这会对卷积网络的检测结果造成影响。
-CNN和GNN两个神经网络需要同步对同一个CAN数据包检测，然而每次输入到卷积网络的帧数是固定的29帧，输入到图网络的帧数是由强化学习的输出决定的。进行一次检测两个网络所输入的数据量不一致，每个数据包卷积网络只能检测29的倍数帧，所以每个数据包的检测卷积网络往往无法检测完整的数据包，会给卷积网络的检测带来误差。
-
-CNN和GNN两个神经网络需要同步对同一个CAN数据包检测，然而进行一次检测两个网络需要输入的数据量不一致。每个数据包卷积网络只能检测29的倍数帧，但是图网络的输入是整个数据包的帧数，这会带来卷积网络的识别误差。
-CNN and GNN need to detect the same CAN packet synchronously. However, the amount of data required to be input by the two networks for one-time detection is inconsistent. CNN can only detect multiple frames of 29 for each packet , but the input of the GNN is the whole packet, which will bring the intrusion detection error of the CNN.
